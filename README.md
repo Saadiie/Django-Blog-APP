@@ -158,4 +158,4 @@ This project uses **SQLite3** which is Django's default database. No extra insta
 
 ## 👤 Author
 
-**Saad** — Grayphite Tasks
+**Saad** -- **Python Developer**
