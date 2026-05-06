@@ -1,55 +1,66 @@
 # 📝 Django Blog App
 
-A simple blog application built with Django that allows you to create, view, and list blog posts using SQLite as the database.
+A simple blog application built with Python & Django that allows you to create, view, and list blog posts using SQLite as the default database.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Python** 3.14+
-- **Django** 6.0.5
-- **Database** SQLite3 (built-in, no setup needed)
+- **Language:** Python 3.14+
+- **Framework:** Django 6.0.5
+- **Database:** SQLite3 (built-in, no setup needed)
+- **Frontend:** HTML, CSS (Django Templates)
 
 ---
 
 ## 📁 Project Structure
 
 ```
-Blogs/
-├── config/                  ← run all commands from here
-│   ├── blog/                ← blog app
-│   │   ├── migrations/      ← database migration files
+BLOGS/
+├── myblog/                   ← project root (run all commands from here)
+│   ├── blog/                 ← blog app
+│   │   ├── migrations/       ← auto-generated database migrations
 │   │   ├── templates/
 │   │   │   └── blog/
 │   │   │       ├── list.html      ← all blogs page
 │   │   │       ├── detail.html    ← single blog page
 │   │   │       └── create.html    ← create blog form
-│   │   ├── models.py        ← Blog database model
-│   │   ├── views.py         ← list, get, create logic
-│   │   ├── urls.py          ← blog URL routes
-│   │   └── admin.py         ← admin panel config
-│   ├── config/              ← project settings
-│   │   ├── settings.py
-│   │   └── urls.py
-│   ├── db.sqlite3           ← SQLite database (auto-created)
-│   └── manage.py
-└── venv/                    ← virtual environment
+│   │   ├── __init__.py
+│   │   ├── admin.py          ← register models to admin panel
+│   │   ├── apps.py           ← app configuration
+│   │   ├── models.py         ← Blog database model
+│   │   ├── urls.py           ← blog URL routes
+│   │   └── views.py          ← list, get, create logic
+│   ├── config/               ← project settings package
+│   │   ├── __init__.py
+│   │   ├── settings.py       ← all project configuration
+│   │   ├── urls.py           ← root URL configuration
+│   │   ├── wsgi.py
+│   │   └── asgi.py
+│   ├── db.sqlite3            ← SQLite database (auto-created)
+│   └── manage.py             ← Django command-line utility
+├── venv/                     ← virtual environment (do not edit)
+├── .gitignore
+└── README.md
 ```
 
 ---
 
 ## ⚙️ Setup & Installation
 
-### Step 1 — Clone or open the project in VSCode
+### Step 1 — Clone the repository
 
-Open the `Blogs` folder in VSCode.
+```cmd
+git clone https://github.com/Saadiie/Django-Blog-APP.git
+cd Django-Blog-APP
+```
 
-### Step 2 — Activate Virtual Environment
-
-Open the terminal in VSCode (`Ctrl + backtick`) and run:
+### Step 2 — Create & Activate Virtual Environment
 
 ```powershell
-# Fix execution policy (only needed once)
+python -m venv venv
+
+# Fix execution policy (Windows only - one time per terminal session)
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 
 # Activate venv
@@ -58,13 +69,7 @@ venv\Scripts\activate
 
 You should see `(venv)` appear in your terminal.
 
-### Step 3 — Navigate to the project folder
-
-```cmd
-cd config
-```
-
-### Step 4 — Install Dependencies
+### Step 3 — Install Dependencies
 
 ```cmd
 pip install django
@@ -76,9 +81,15 @@ Or if a `requirements.txt` exists:
 pip install -r requirements.txt
 ```
 
+### Step 4 — Navigate to project root
+
+```cmd
+cd myblog
+```
+
 ### Step 5 — Run Migrations
 
-This creates the database tables in SQLite:
+Creates all database tables in SQLite automatically:
 
 ```cmd
 python manage.py makemigrations
@@ -99,30 +110,30 @@ Enter your preferred username and password when prompted.
 python manage.py runserver
 ```
 
+Visit `http://127.0.0.1:8000/blogs/` in your browser. ✅
+
 ---
 
 ## 🌐 Available URLs
 
 | URL | Method | Description |
 |-----|--------|-------------|
-| `http://127.0.0.1:8000/blogs/` | GET | List all blog posts |
-| `http://127.0.0.1:8000/blogs/create/` | GET / POST | Create a new blog post |
-| `http://127.0.0.1:8000/blogs/<id>/` | GET | View a single blog post |
-| `http://127.0.0.1:8000/admin/` | GET | Django admin panel |
+| `/blogs/` | GET | List all blog posts |
+| `/blogs/create/` | GET / POST | Create a new blog post |
+| `/blogs/<id>/` | GET | View a single blog post |
+| `/admin/` | GET | Django admin panel |
 
 ---
 
 ## 📌 Every Time You Return to the Project
 
-Run these commands every time you open the project:
-
 ```powershell
-# 1. Activate venv (from Blogs/ folder)
+# 1. Activate venv (from BLOGS/ folder)
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 venv\Scripts\activate
 
-# 2. Go into project folder
-cd config
+# 2. Navigate to project root
+cd myblog
 
 # 3. Start server
 python manage.py runserver
@@ -132,27 +143,29 @@ python manage.py runserver
 
 ## 🗄️ Database
 
-This project uses **SQLite3** which is Django's default database. No extra installation or configuration is needed. The database file `db.sqlite3` is automatically created inside the `config/` folder when you run migrations.
+This project uses **SQLite3** which is Django's default database. No extra installation or configuration needed. The `db.sqlite3` file is automatically created inside `myblog/` when you run migrations.
 
 ---
 
 ## ⚠️ Important Notes
 
-- Always include `{% csrf_token %}` inside every HTML `<form>` that uses `method="POST"` — otherwise Django will return a **403 Forbidden** error.
-- Never run `python manage.py runserver` from the `Blogs/` root folder — always `cd config` first.
-- After changing `models.py`, always run `makemigrations` and `migrate` again.
+- Always include `{% csrf_token %}` inside every HTML `<form method="POST">` — without it Django returns a **403 Forbidden** error. This is Django's built-in security against Cross-Site Request Forgery attacks.
+- Always run commands from inside the `myblog/` folder where `manage.py` lives.
+- After any changes to `models.py`, always run `makemigrations` then `migrate`.
+- Never share your `SECRET_KEY` from `settings.py` publicly.
 
 ---
 
 ## 🧪 Quick Test Checklist
 
-- [ ] `venv` is activated (`(venv)` shows in terminal)
-- [ ] Inside `config/` folder
-- [ ] Migrations have been run
-- [ ] Server is running at `http://127.0.0.1:8000`
-- [ ] Can visit `/blogs/` without errors
-- [ ] Can create a blog at `/blogs/create/`
-- [ ] Created blog appears at `/blogs/`
+- [ ] `(venv)` is showing in terminal
+- [ ] Inside `myblog/` folder
+- [ ] Migrations have been run successfully
+- [ ] Server running at `http://127.0.0.1:8000`
+- [ ] `/blogs/` shows list page without errors
+- [ ] `/blogs/create/` shows the form
+- [ ] After submitting form, blog appears in `/blogs/`
+- [ ] `/admin/` panel is accessible
 
 ---
 
