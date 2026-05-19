@@ -1,20 +1,243 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-<h2>Login</h2>
+{% block title %}Sign In — Inkwell{% endblock %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
-</form>
-<p>
-    Don't have an account?
-    <a href="/blogs/register/">Register here</a>
-</p>
-</body>
-</html>
+{% block extra_head %}
+<style>
+    /* ============================================================
+       AUTH LAYOUT
+    ============================================================ */
+    .auth-page {
+        min-height: calc(100vh - var(--nav-h));
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Left panel — decorative */
+    .auth-panel {
+        background: var(--ink);
+        padding: 64px 56px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .auth-panel::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .auth-panel__quote {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(1.6rem, 3vw, 2.4rem);
+        font-weight: 700;
+        font-style: italic;
+        color: var(--paper);
+        line-height: 1.3;
+        position: relative;
+        z-index: 1;
+    }
+    .auth-panel__quote::before {
+        content: '"';
+        font-size: 5rem;
+        line-height: 0;
+        vertical-align: -2.5rem;
+        color: var(--accent);
+        font-style: normal;
+        display: block;
+        margin-bottom: 20px;
+    }
+    .auth-panel__attr {
+        font-size: .85rem;
+        color: var(--ink-light);
+        margin-top: 20px;
+        position: relative;
+        z-index: 1;
+    }
+    .auth-panel__logo {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--paper);
+        margin-bottom: 64px;
+        position: relative;
+        z-index: 1;
+    }
+    .auth-panel__logo span { color: var(--accent); }
+
+    /* Right panel — form */
+    .auth-form-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 32px;
+        background: var(--paper);
+    }
+
+    .auth-form-inner {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .auth-form-inner h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--ink);
+        margin-bottom: 8px;
+    }
+    .auth-form-inner .sub {
+        font-size: .9rem;
+        color: var(--ink-light);
+        margin-bottom: 36px;
+    }
+
+    /* Fields */
+    .field { margin-bottom: 20px; }
+    .field label {
+        display: block;
+        font-size: .78rem;
+        font-weight: 600;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        color: var(--ink-mid);
+        margin-bottom: 7px;
+    }
+    .field input {
+        width: 100%;
+        height: 48px;
+        border: 1.5px solid var(--paper-deep);
+        background: #fff;
+        border-radius: var(--radius-md);
+        padding: 0 16px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: .95rem;
+        color: var(--ink);
+        outline: none;
+        transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .field input::placeholder { color: var(--ink-faint); }
+    .field input:focus {
+        border-color: var(--ink);
+        box-shadow: 0 0 0 4px rgba(26,22,18,.07);
+    }
+
+    /* Error messages */
+    .form-errors {
+        background: var(--error-bg);
+        border: 1px solid #f5c6c2;
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        margin-bottom: 20px;
+    }
+    .form-errors p, .form-errors li {
+        font-size: .85rem;
+        color: var(--error);
+    }
+    .form-errors ul { list-style: none; }
+
+    .btn--sign-in {
+        width: 100%;
+        height: 50px;
+        background: var(--ink);
+        color: var(--paper);
+        border: none;
+        border-radius: var(--radius-md);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+        margin-top: 8px;
+    }
+    .btn--sign-in:hover {
+        background: var(--ink-mid);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+    .btn--sign-in:active { transform: scale(.98); }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 24px;
+        font-size: .875rem;
+        color: var(--ink-light);
+    }
+    .auth-footer a {
+        color: var(--accent);
+        font-weight: 500;
+    }
+    .auth-footer a:hover { text-decoration: underline; }
+
+    /* Responsive — stack on mobile */
+    @media (max-width: 768px) {
+        .auth-page { grid-template-columns: 1fr; }
+        .auth-panel { display: none; }
+        .auth-form-wrap { padding: 40px 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+
+    <!-- LEFT DECORATIVE PANEL -->
+    <div class="auth-panel">
+        <div class="auth-panel__logo">Inkwell<span>.</span></div>
+        <blockquote class="auth-panel__quote">
+            The scariest moment is always just before you start.
+        </blockquote>
+        <p class="auth-panel__attr">— Stephen King</p>
+    </div>
+
+    <!-- RIGHT FORM PANEL -->
+    <div class="auth-form-wrap">
+        <div class="auth-form-inner">
+
+            <h1>Welcome back.</h1>
+            <p class="sub">Sign in to your Inkwell account.</p>
+
+            <!-- Django form errors -->
+            {% if form.errors %}
+            <div class="form-errors">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label for="id_username">Username</label>
+                    <input type="text" name="username" id="id_username"
+                           placeholder="Enter your username" autocomplete="username" required>
+                </div>
+
+                <div class="field">
+                    <label for="id_password">Password</label>
+                    <input type="password" name="password" id="id_password"
+                           placeholder="••••••••" autocomplete="current-password" required>
+                </div>
+
+                <button type="submit" class="btn--sign-in">Sign in →</button>
+            </form>
+
+            <div class="auth-footer">
+                Don't have an account?
+                <a href="/blogs/register/">Create one — it's free</a>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

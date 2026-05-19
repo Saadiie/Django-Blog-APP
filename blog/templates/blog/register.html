@@ -1,23 +1,328 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-<h2>Create Account</h2>
+{% block title %}Join Inkwell — Create Account{% endblock %}
 
-<form method="POST">
-    {% csrf_token %}
+{% block extra_head %}
+<style>
+    .auth-page {
+        min-height: calc(100vh - var(--nav-h));
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
 
-    <input type="text" name="username" placeholder="Username" required>
-    <br><br>
+    /* Left form panel */
+    .auth-form-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 32px;
+        background: var(--paper);
+    }
 
-    <input type="password" name="password" placeholder="Password" required>
-    <br><br>
+    .auth-form-inner {
+        width: 100%;
+        max-width: 400px;
+    }
+    .auth-form-inner h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--ink);
+        margin-bottom: 8px;
+    }
+    .auth-form-inner .sub {
+        font-size: .9rem;
+        color: var(--ink-light);
+        margin-bottom: 36px;
+    }
 
-    <button type="submit">Register</button>
-</form>
+    .field { margin-bottom: 20px; }
+    .field label {
+        display: block;
+        font-size: .78rem;
+        font-weight: 600;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        color: var(--ink-mid);
+        margin-bottom: 7px;
+    }
+    .field input {
+        width: 100%;
+        height: 48px;
+        border: 1.5px solid var(--paper-deep);
+        background: #fff;
+        border-radius: var(--radius-md);
+        padding: 0 16px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: .95rem;
+        color: var(--ink);
+        outline: none;
+        transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .field input::placeholder { color: var(--ink-faint); }
+    .field input:focus {
+        border-color: var(--ink);
+        box-shadow: 0 0 0 4px rgba(26,22,18,.07);
+    }
+    .field input.valid { border-color: var(--success); }
+    .field input.invalid { border-color: var(--error); }
 
-</body>
-</html>
+    .field__hint {
+        font-size: .75rem;
+        color: var(--ink-faint);
+        margin-top: 5px;
+    }
+
+    /* Password strength */
+    .strength-bar {
+        height: 4px;
+        background: var(--paper-deep);
+        border-radius: 99px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+    .strength-bar__fill {
+        height: 100%;
+        width: 0;
+        border-radius: 99px;
+        transition: width .3s ease, background .3s ease;
+    }
+    .strength-label {
+        font-size: .72rem;
+        margin-top: 4px;
+        color: var(--ink-faint);
+    }
+
+    .form-errors {
+        background: var(--error-bg);
+        border: 1px solid #f5c6c2;
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        margin-bottom: 20px;
+    }
+    .form-errors p { font-size: .85rem; color: var(--error); }
+
+    .btn--register {
+        width: 100%;
+        height: 50px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-md);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+        margin-top: 8px;
+    }
+    .btn--register:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(192,57,43,.25);
+    }
+    .btn--register:active { transform: scale(.98); }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 24px;
+        font-size: .875rem;
+        color: var(--ink-light);
+    }
+    .auth-footer a { color: var(--accent); font-weight: 500; }
+    .auth-footer a:hover { text-decoration: underline; }
+
+    .perks {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 28px;
+    }
+    .perk {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: .85rem;
+        color: var(--ink-light);
+    }
+    .perk-icon {
+        width: 28px;
+        height: 28px;
+        background: var(--paper-warm);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .85rem;
+        flex-shrink: 0;
+    }
+
+    /* Right panel */
+    .auth-panel {
+        background: var(--ink);
+        padding: 64px 56px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .auth-panel::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .auth-panel__content { position: relative; z-index: 1; }
+    .auth-panel__logo {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--paper);
+        margin-bottom: 48px;
+    }
+    .auth-panel__logo span { color: var(--accent); }
+    .auth-panel__headline {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(1.8rem, 3vw, 2.8rem);
+        font-weight: 800;
+        color: var(--paper);
+        line-height: 1.2;
+        margin-bottom: 20px;
+    }
+    .auth-panel__headline em {
+        font-style: italic;
+        color: var(--gold);
+    }
+    .auth-panel__features {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 32px;
+    }
+    .auth-panel__features li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: .9rem;
+        color: var(--ink-faint);
+    }
+    .auth-panel__features li::before {
+        content: '✓';
+        width: 22px;
+        height: 22px;
+        background: rgba(255,255,255,.08);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .75rem;
+        color: var(--gold);
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .auth-page { grid-template-columns: 1fr; }
+        .auth-panel { display: none; }
+        .auth-form-wrap { padding: 40px 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+
+    <!-- FORM PANEL (LEFT) -->
+    <div class="auth-form-wrap">
+        <div class="auth-form-inner">
+
+            <h1>Create account.</h1>
+            <p class="sub">Join Inkwell and start sharing your stories.</p>
+
+            {% if error %}
+            <div class="form-errors">
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <form method="POST" id="registerForm" novalidate>
+                {% csrf_token %}
+
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" id="username"
+                           placeholder="Choose a username" autocomplete="username" required>
+                    <p class="field__hint">Letters, numbers, and underscores only.</p>
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password"
+                           placeholder="Create a strong password" autocomplete="new-password" required>
+                    <div class="strength-bar"><div class="strength-bar__fill" id="strengthFill"></div></div>
+                    <p class="strength-label" id="strengthLabel">Enter a password</p>
+                </div>
+
+                <button type="submit" class="btn--register">Create my account →</button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account?
+                <a href="/accounts/login/">Sign in</a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- RIGHT DECORATIVE PANEL -->
+    <div class="auth-panel">
+        <div class="auth-panel__content">
+            <div class="auth-panel__logo">Inkwell<span>.</span></div>
+
+            <h2 class="auth-panel__headline">
+                Your ideas deserve<br>to be <em>heard.</em>
+            </h2>
+
+            <ul class="auth-panel__features">
+                <li>Write and publish articles for free</li>
+                <li>Share ideas with a global community</li>
+                <li>Upload images to make posts stand out</li>
+                <li>Full control to edit and manage your work</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const passwordInput = document.getElementById('password');
+    const fill = document.getElementById('strengthFill');
+    const label = document.getElementById('strengthLabel');
+
+    passwordInput.addEventListener('input', () => {
+        const val = passwordInput.value;
+        let strength = 0;
+        if (val.length >= 6) strength++;
+        if (val.length >= 10) strength++;
+        if (/[A-Z]/.test(val)) strength++;
+        if (/[0-9]/.test(val)) strength++;
+        if (/[^A-Za-z0-9]/.test(val)) strength++;
+
+        const levels = [
+            { pct: '0%',   color: 'transparent', text: 'Enter a password' },
+            { pct: '25%',  color: '#e74c3c',      text: 'Weak' },
+            { pct: '50%',  color: '#f39c12',      text: 'Fair' },
+            { pct: '75%',  color: '#3498db',      text: 'Good' },
+            { pct: '100%', color: '#1a7a4a',      text: 'Strong' },
+        ];
+        const lvl = levels[Math.min(strength, 4)];
+        fill.style.width = val ? lvl.pct : '0%';
+        fill.style.background = lvl.color;
+        label.textContent = val ? lvl.text : 'Enter a password';
+        label.style.color = lvl.color || 'var(--ink-faint)';
+    });
+</script>
+{% endblock %}

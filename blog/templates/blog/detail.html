@@ -1,31 +1,285 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ blog.title }}</title>
-    <style>
-        body { font-family: Arial; max-width: 800px; margin: 40px auto; padding: 0 20px; }
-        .meta { color: #666; margin-bottom: 20px; }
-        a { color: #2563eb; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <a href="/blogs/">← Back to all blogs</a>
+{% block title %}{{ blog.title }} — Inkwell{% endblock %}
 
-    <h1>{{ blog.title }}</h1>
+{% block extra_head %}
+<style>
 
-    <p class="meta">
-        By <strong>{{ blog.author }}</strong> | {{ blog.created_at|date:"F d, Y" }}
-    </p>
-       {% if blog.image %}
-           <img src="{{ blog.image.url }}" style="max-width:400px; margin:20px 0;">
-       {% endif %}
-    <p>{{ blog.content }}</p>
+    /* ============================================================
+       FEATURED IMAGE BANNER
+    ============================================================ */
+    .article-banner {
+        width: 100%;
+        height: clamp(280px, 45vw, 520px);
+        overflow: hidden;
+        position: relative;
+        background: var(--ink);
+    }
+    .article-banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: .88;
+    }
+    .article-banner__overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, transparent 40%, rgba(26,22,18,.6) 100%);
+    }
 
-    <!-- ✅ PUT IT HERE (below content) -->
-    {% if request.user == blog.author %}
-        <a href="{% url 'edit-blog' blog.id %}">Edit Blog</a>
+    /* ============================================================
+       ARTICLE LAYOUT
+    ============================================================ */
+    .article-wrap {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        padding: 0 28px;
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 64px;
+        align-items: start;
+    }
+
+    /* ============================================================
+       ARTICLE HEADER
+    ============================================================ */
+    .article-header {
+        padding: 52px 0 32px;
+    }
+    .article-header__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .82rem;
+        font-weight: 500;
+        color: var(--ink-light);
+        margin-bottom: 32px;
+        transition: color var(--transition);
+    }
+    .article-header__back:hover { color: var(--ink); }
+
+    .article-header__title {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        line-height: 1.15;
+        color: var(--ink);
+        margin-bottom: 24px;
+    }
+
+    .article-meta {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px 0;
+        border-top: 1px solid var(--paper-deep);
+        border-bottom: 1px solid var(--paper-deep);
+        margin-bottom: 40px;
+        flex-wrap: wrap;
+    }
+    .article-meta__avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: var(--paper);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .article-meta__info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .article-meta__author {
+        font-weight: 600;
+        color: var(--ink);
+        font-size: .9rem;
+    }
+    .article-meta__date {
+        font-size: .8rem;
+        color: var(--ink-light);
+    }
+    .article-meta__edit {
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       ARTICLE BODY
+    ============================================================ */
+    .article-body {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1.08rem;
+        line-height: 1.85;
+        color: var(--ink-mid);
+    }
+    .article-body p {
+        margin-bottom: 1.6em;
+    }
+
+    /* ============================================================
+       STICKY SIDEBAR
+    ============================================================ */
+    .article-sidebar {
+        position: sticky;
+        top: calc(var(--nav-h) + 28px);
+        padding-top: 52px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .aside-box {
+        background: #fff;
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+    }
+    .aside-box__title {
+        font-family: 'Playfair Display', serif;
+        font-size: .95rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--paper-deep);
+    }
+
+    /* Author card */
+    .author-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+    }
+    .author-card__avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: var(--paper);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+    .author-card__name {
+        font-weight: 600;
+        color: var(--ink);
+        font-size: .95rem;
+    }
+    .author-card__label {
+        font-size: .78rem;
+        color: var(--ink-light);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 900px) {
+        .article-wrap {
+            grid-template-columns: 1fr;
+            gap: 0;
+            padding: 0 18px;
+        }
+        .article-sidebar { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <!-- FEATURED IMAGE BANNER -->
+    {% if blog.image %}
+    <div class="article-banner">
+        <img src="{{ blog.image.url }}" alt="{{ blog.title }}">
+        <div class="article-banner__overlay"></div>
+    </div>
     {% endif %}
 
-</body>
-</html>
+    <!-- ARTICLE BODY -->
+    <div class="article-wrap">
+
+        <!-- MAIN CONTENT -->
+        <article>
+            <header class="article-header">
+                <a href="/blogs/" class="article-header__back">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M19 12H5M12 5l-7 7 7 7"/>
+                    </svg>
+                    Back to all articles
+                </a>
+
+                <h1 class="article-header__title">{{ blog.title }}</h1>
+
+                <div class="article-meta">
+                    <div class="article-meta__avatar">{{ blog.author.username|slice:":1"|upper }}</div>
+                    <div class="article-meta__info">
+                        <span class="article-meta__author">{{ blog.author }}</span>
+                        <span class="article-meta__date">Published {{ blog.created_at|date:"F d, Y" }}</span>
+                    </div>
+
+                    {% if request.user == blog.author %}
+                    <div class="article-meta__edit">
+                        <a href="{% url 'edit-blog' blog.id %}" class="btn btn--ghost btn--sm">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Edit article
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </header>
+
+            <div class="article-body">
+                {{ blog.content|linebreaks }}
+            </div>
+        </article>
+
+        <!-- SIDEBAR -->
+        <aside class="article-sidebar">
+
+            <div class="aside-box">
+                <div class="aside-box__title">Written by</div>
+                <div class="author-card">
+                    <div class="author-card__avatar">{{ blog.author.username|slice:":1"|upper  }}</div>
+                    <div class="author-card__name">{{ blog.author }}</div>
+                    <div class="author-card__label">Author</div>
+                </div>
+            </div>
+
+            {% if request.user == blog.author %}
+            <div class="aside-box">
+                <div class="aside-box__title">Article actions</div>
+                <a href="{% url 'edit-blog' blog.id %}" class="btn btn--ghost" style="width:100%;justify-content:center;border-radius:var(--radius-md);">
+                    ✏️ Edit this article
+                </a>
+            </div>
+            {% endif %}
+
+            <div class="aside-box" style="background:var(--paper-warm);">
+                <div class="aside-box__title">More reading</div>
+                <p style="font-size:.85rem;color:var(--ink-light);margin-bottom:12px;">
+                    Discover more articles from our community.
+                </p>
+                <a href="/blogs/" class="btn btn--primary btn--sm" style="border-radius:var(--radius-md);">
+                    Browse all articles →
+                </a>
+            </div>
+
+        </aside>
+
+    </div>
+
+{% endblock %}

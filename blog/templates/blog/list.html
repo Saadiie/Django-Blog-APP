@@ -1,127 +1,505 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>All Blogs</title>
-    <style>
-        body { font-family: Arial; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+{% extends "base.html" %}
 
-        .blog-card {
-            border: 1px solid #ddd;
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 8px;
+{% block title %}Inkwell — All Articles{% endblock %}
+{% block search_val %}{{ query }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ============================================================
+       HERO BAND
+    ============================================================ */
+    .hero {
+        background: var(--ink);
+        padding: 72px 28px 64px;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero__inner {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+    .hero__title {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(2.2rem, 5vw, 3.6rem);
+        font-weight: 800;
+        color: var(--paper);
+        line-height: 1.1;
+    }
+    .hero__title em {
+        font-style: italic;
+        color: var(--gold);
+    }
+    .hero__sub {
+        font-size: 1rem;
+        color: var(--ink-faint);
+        margin-top: 12px;
+        max-width: 480px;
+    }
+    .hero__cta {
+        flex-shrink: 0;
+    }
+
+    /* ============================================================
+       SEARCH STRIP
+    ============================================================ */
+    .search-strip {
+        background: var(--paper-warm);
+        border-bottom: 1px solid var(--paper-deep);
+        padding: 14px 28px;
+    }
+    .search-strip__inner {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .search-strip__label {
+        font-size: .875rem;
+        color: var(--ink-light);
+    }
+    .search-strip__label strong { color: var(--ink); }
+    .search-strip__form {
+        display: flex;
+        gap: 8px;
+    }
+    .search-strip__form input {
+        height: 36px;
+        border: 1px solid var(--paper-deep);
+        background: var(--paper);
+        border-radius: 99px;
+        padding: 0 16px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: .875rem;
+        color: var(--ink);
+        outline: none;
+        width: 240px;
+        transition: border-color var(--transition);
+    }
+    .search-strip__form input:focus { border-color: var(--ink-mid); }
+    .search-strip__form button {
+        height: 36px;
+        padding: 0 18px;
+        background: var(--ink);
+        color: var(--paper);
+        border: none;
+        border-radius: 99px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: .875rem;
+        font-weight: 500;
+        transition: background var(--transition);
+    }
+    .search-strip__form button:hover { background: var(--ink-mid); }
+    .search-strip__clear {
+        font-size: .8rem;
+        color: var(--accent);
+        margin-left: 6px;
+    }
+    .search-strip__clear:hover { text-decoration: underline; }
+
+    /* ============================================================
+       LAYOUT: SIDEBAR + FEED
+    ============================================================ */
+    .feed-layout {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        padding: 48px 28px;
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 48px;
+        align-items: start;
+    }
+
+    /* ============================================================
+       BLOG CARDS
+    ============================================================ */
+    .feed { display: flex; flex-direction: column; gap: 32px; }
+
+    .card {
+        background: #fff;
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0;
+        transition: box-shadow var(--transition), transform var(--transition);
+    }
+    .card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-3px);
+    }
+
+    /* Card with image: stack vertically */
+    .card.has-image {
+        grid-template-columns: 1fr;
+    }
+
+    .card__img-wrap {
+        height: 220px;
+        overflow: hidden;
+    }
+    .card__img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .5s ease;
+    }
+    .card:hover .card__img-wrap img { transform: scale(1.04); }
+
+    .card__body {
+        padding: 28px 32px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .card__meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: .78rem;
+        color: var(--ink-light);
+        font-weight: 500;
+    }
+    .card__meta .avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: var(--paper);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .7rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .card__meta .sep { color: var(--ink-faint); }
+
+    .card__title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.25;
+    }
+    .card__title:hover { color: var(--accent); }
+
+    .card__excerpt {
+        font-size: .9rem;
+        color: var(--ink-light);
+        line-height: 1.65;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .card__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 4px;
+    }
+    .card__read {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--accent);
+        letter-spacing: .3px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: gap var(--transition);
+    }
+    .card__read:hover { gap: 8px; }
+
+    /* Text-only card (no image) */
+    .card.no-image .card__body { padding: 28px 32px; }
+
+    /* ============================================================
+       SIDEBAR
+    ============================================================ */
+    .sidebar { display: flex; flex-direction: column; gap: 28px; }
+
+    .sidebar-box {
+        background: #fff;
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+    }
+    .sidebar-box__title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--paper-deep);
+    }
+    .sidebar-box p {
+        font-size: .88rem;
+        color: var(--ink-light);
+        line-height: 1.6;
+    }
+
+    /* ============================================================
+       PAGINATION
+    ============================================================ */
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 24px 0;
+        border-top: 1px solid var(--paper-deep);
+    }
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 18px;
+        border-radius: 99px;
+        font-size: .875rem;
+        font-weight: 500;
+    }
+    .pagination a {
+        border: 1px solid var(--paper-deep);
+        color: var(--ink-mid);
+        transition: all var(--transition);
+    }
+    .pagination a:hover {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+    }
+    .pagination span {
+        background: transparent;
+        color: var(--ink-light);
+        font-size: .82rem;
+    }
+
+    /* ============================================================
+       EMPTY STATE
+    ============================================================ */
+    .empty {
+        text-align: center;
+        padding: 72px 24px;
+    }
+    .empty__icon {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+        opacity: .4;
+    }
+    .empty__title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.7rem;
+        color: var(--ink);
+        margin-bottom: 10px;
+    }
+    .empty__sub {
+        color: var(--ink-light);
+        font-size: .95rem;
+        margin-bottom: 28px;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 900px) {
+        .feed-layout {
+            grid-template-columns: 1fr;
+            padding: 28px 18px;
         }
+        .sidebar { display: none; }
+    }
+    @media (max-width: 600px) {
+        .card { grid-template-columns: 1fr; }
+        .card__body { padding: 20px; }
+        .hero { padding: 48px 18px 40px; }
+        .hero__cta { display: none; }
+    }
+</style>
+{% endblock %}
 
-        .blog-card h2 { margin: 0 0 8px 0; }
+{% block content %}
 
-        a { color: #2563eb; text-decoration: none; }
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero__inner">
+            <div>
+                <h1 class="hero__title">
+                    <em>Stories</em> that<br>matter to you.
+                </h1>
+                <p class="hero__sub">Discover ideas, perspectives, and expertise from writers on every topic.</p>
+            </div>
+            <div class="hero__cta">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create-blog' %}" class="btn btn--accent" style="font-size:1rem;padding:12px 28px;">
+                        ✍️ Start Writing
+                    </a>
+                {% else %}
+                    <a href="/blogs/register/" class="btn btn--accent" style="font-size:1rem;padding:12px 28px;">
+                        Join for free →
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
 
-        .btn {
-            background: #2563eb;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-
-{% if messages %}
-    {% for message in messages %}
-        <p style="color: green;">{{ message }}</p>
-    {% endfor %}
-{% endif %}
-
-{% if user.is_authenticated %}
-    <p>
-        Welcome, {{ user.username }} |
-
-        <form method="POST" action="/accounts/logout/" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" style="background:none;border:none;color:#2563eb;cursor:pointer;">
-                Logout
-            </button>
-        </form>
-    </p>
-{% else %}
-    <a href="/accounts/login/">Login</a>
-{% endif %}
-
-<h1>📝 All Blog Posts</h1>
-
-<!-- 🔍 SEARCH BAR (ADDED HERE) -->
-<form method="GET" style="margin-bottom:20px;">
-    <input type="text"
-           name="q"
-           placeholder="Search blogs..."
-           value="{{ query }}"
-           style="padding:8px; width:70%;">
-
-    <button type="submit" style="padding:8px 15px;">
-        Search
-    </button>
-</form>
-
-<!-- CREATE BUTTON -->
-{% if user.is_authenticated %}
-    <a href="{% url 'create-blog' %}" class="btn">+ Create New Blog</a>
-{% else %}
-    <a href="/accounts/login/" class="btn">Login to Create Blog</a>
-{% endif %}
-
-<!-- BLOG LIST -->
-{% if blogs %}
-    {% for blog in blogs %}
-        <div class="blog-card">
-            <h2>{{ blog.title }}</h2>
-
-            <p>
-                By <strong>{{ blog.author }}</strong> |
-                {{ blog.created_at|date:"M d, Y" }}
+    <!-- SEARCH STRIP (only shown when searching) -->
+    {% if query %}
+    <div class="search-strip">
+        <div class="search-strip__inner">
+            <p class="search-strip__label">
+                Results for <strong>"{{ query }}"</strong>
+                <a href="/blogs/" class="search-strip__clear">✕ Clear</a>
             </p>
+            <form class="search-strip__form" method="GET">
+                <input type="text" name="q" value="{{ query }}" placeholder="Refine search…">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
 
-            {% if blog.image %}
-                <img src="{{ blog.image.url }}" style="max-width:400px; margin:20px 0;">
+    <!-- FEED + SIDEBAR -->
+    <div class="feed-layout">
+
+        <!-- MAIN FEED -->
+        <section>
+            {% if blogs %}
+                <div class="feed">
+                    {% for blog in blogs %}
+                        <article class="card {% if blog.image %}has-image{% else %}no-image{% endif %}">
+
+                            {% if blog.image %}
+                                <div class="card__img-wrap">
+                                    <a href="/blogs/{{ blog.id }}/">
+                                        <img src="{{ blog.image.url }}" alt="{{ blog.title }}">
+                                    </a>
+                                </div>
+                            {% endif %}
+
+                            <div class="card__body">
+                                <div class="card__meta">
+                                    <div class="avatar">{{ blog.author.username|slice:":1"|upper }}</div>
+                                    <span>{{ blog.author }}</span>
+                                    <span class="sep">·</span>
+                                    <span>{{ blog.created_at|date:"M d, Y" }}</span>
+                                </div>
+
+                                <a href="/blogs/{{ blog.id }}/">
+                                    <h2 class="card__title">{{ blog.title }}</h2>
+                                </a>
+
+                                <p class="card__excerpt">{{ blog.content|truncatewords:28 }}</p>
+
+                                <div class="card__footer">
+                                    <a href="/blogs/{{ blog.id }}/" class="card__read">
+                                        Read article
+                                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </article>
+                    {% endfor %}
+                </div>
+
+                <!-- PAGINATION -->
+                <div class="pagination">
+                    {% if blogs.has_previous %}
+                        <a href="?page={{ blogs.previous_page_number }}&q={{ query }}">
+                            ← Previous
+                        </a>
+                    {% endif %}
+
+                    <span>Page {{ blogs.number }} of {{ blogs.paginator.num_pages }}</span>
+
+                    {% if blogs.has_next %}
+                        <a href="?page={{ blogs.next_page_number }}&q={{ query }}">
+                            Next →
+                        </a>
+                    {% endif %}
+                </div>
+
+            {% else %}
+                <!-- EMPTY STATE -->
+                <div class="empty">
+                    <div class="empty__icon">📰</div>
+                    {% if query %}
+                        <h2 class="empty__title">No results for "{{ query }}"</h2>
+                        <p class="empty__sub">Try a different search term or browse all articles.</p>
+                        <a href="/blogs/" class="btn btn--primary">Browse all articles</a>
+                    {% else %}
+                        <h2 class="empty__title">No articles yet</h2>
+                        <p class="empty__sub">Be the first to share your story with the world.</p>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'create-blog' %}" class="btn btn--accent">Write the first article</a>
+                        {% else %}
+                            <a href="/accounts/login/" class="btn btn--primary">Sign in to write</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            {% if user.is_authenticated %}
+            <div class="sidebar-box">
+                <div class="sidebar-box__title">Your Profile</div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                    <div style="width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;font-family:'Playfair Display',serif;">
+                        {{ user.username|slice:":1"|upper}}
+                    </div>
+                    <div>
+                        <div style="font-weight:600;color:var(--ink);">{{ user.username }}</div>
+                        <div style="font-size:.78rem;color:var(--ink-light);">Author</div>
+                    </div>
+                </div>
+                <a href="{% url 'create-blog' %}" class="btn btn--accent" style="width:100%;justify-content:center;">
+                    ✍️ Write new article
+                </a>
+            </div>
             {% endif %}
 
-            <p>{{ blog.content|truncatewords:20 }}</p>
+            <div class="sidebar-box">
+                <div class="sidebar-box__title">About Inkwell</div>
+                <p>A place to write and discover stories. Share your ideas, experiences, and knowledge with readers around the world.</p>
+            </div>
 
-            <a href="/blogs/{{ blog.id }}/">Read More →</a>
-        </div>
-    {% endfor %}
-    <!-- 📄 PAGINATION -->
-<div style="margin-top: 30px; text-align:center;">
+            <div class="sidebar-box" style="background:var(--ink);border-color:var(--ink);">
+                <div class="sidebar-box__title" style="color:var(--paper);border-color:#2e2a25;">Ready to write?</div>
+                <p style="color:var(--ink-faint);margin-bottom:16px;">Join the community and share your stories today.</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create-blog' %}" class="btn btn--accent" style="width:100%;justify-content:center;">Start writing</a>
+                {% else %}
+                    <a href="/blogs/register/" class="btn btn--accent" style="width:100%;justify-content:center;">Get started free</a>
+                {% endif %}
+            </div>
+        </aside>
 
-    {% if blogs.has_previous %}
-        <a href="?page={{ blogs.previous_page_number }}&q={{ query }}">
-            ⬅ Previous
-        </a>
-    {% endif %}
+    </div>
 
-    <span style="margin: 0 10px;">
-        Page {{ blogs.number }} of {{ blogs.paginator.num_pages }}
-    </span>
-
-    {% if blogs.has_next %}
-        <a href="?page={{ blogs.next_page_number }}&q={{ query }}">
-            Next ➡
-        </a>
-    {% endif %}
-
-</div>
-{% else %}
-
-    <p>No blogs yet.</p>
-
-    {% if user.is_authenticated %}
-        <a href="{% url 'create-blog' %}">Create the first one!</a>
-    {% else %}
-        <a href="/accounts/login/">Login to create first blog</a>
-    {% endif %}
-
-{% endif %}
-
-</body>
-</html>
+{% endblock %}

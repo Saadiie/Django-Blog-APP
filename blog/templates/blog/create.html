@@ -1,82 +1,324 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Blog</title>
-    <style>
-        body { font-family: Arial; max-width: 600px; margin: 40px auto; padding: 0 20px; }
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0 16px 0;
-                          border: 1px solid #ddd; border-radius: 6px;
-                          font-size: 15px; box-sizing: border-box; }
-        textarea { height: 200px; resize: vertical; }
-        button { background: #2563eb; color: white; padding: 12px 28px;
-                 border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-        a { color: #2563eb; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <a href="/blogs/">← Back to all blogs</a>
-    <!DOCTYPE html>
-<html>
-<head>
-    <title>Create Blog</title>
-    <style>
-        body {
-            font-family: Arial;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 0 20px;
+{% block title %}Write New Article — Inkwell{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ============================================================
+       EDITOR LAYOUT
+    ============================================================ */
+    .editor-wrap {
+        max-width: 780px;
+        margin: 0 auto;
+        padding: 52px 28px 80px;
+    }
+
+    .editor-header {
+        margin-bottom: 40px;
+    }
+    .editor-header__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .82rem;
+        font-weight: 500;
+        color: var(--ink-light);
+        margin-bottom: 24px;
+        transition: color var(--transition);
+    }
+    .editor-header__back:hover { color: var(--ink); }
+    .editor-header__eyebrow {
+        font-size: .75rem;
+        font-weight: 600;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 10px;
+    }
+    .editor-header__title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--ink);
+    }
+    .editor-header__sub {
+        font-size: .9rem;
+        color: var(--ink-light);
+        margin-top: 8px;
+    }
+
+    /* ============================================================
+       FORM CARD
+    ============================================================ */
+    .form-card {
+        background: #fff;
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-lg);
+        padding: 40px 44px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .field {
+        margin-bottom: 28px;
+    }
+
+    label {
+        display: block;
+        font-size: .82rem;
+        font-weight: 600;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        color: var(--ink-mid);
+        margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    textarea {
+        width: 100%;
+        border: 1.5px solid var(--paper-deep);
+        background: var(--paper);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1rem;
+        color: var(--ink);
+        outline: none;
+        transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input[type="text"]::placeholder,
+    textarea::placeholder { color: var(--ink-faint); }
+    input[type="text"]:focus,
+    textarea:focus {
+        border-color: var(--ink-mid);
+        box-shadow: 0 0 0 4px rgba(26,22,18,.06);
+        background: #fff;
+    }
+
+    textarea {
+        min-height: 320px;
+        resize: vertical;
+        line-height: 1.75;
+    }
+
+    /* File upload */
+    .upload-zone {
+        border: 2px dashed var(--paper-deep);
+        border-radius: var(--radius-md);
+        padding: 32px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color var(--transition), background var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+        border-color: var(--ink-mid);
+        background: var(--paper-warm);
+    }
+    .upload-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+    .upload-zone__icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
+        display: block;
+    }
+    .upload-zone__text {
+        font-size: .9rem;
+        color: var(--ink-light);
+    }
+    .upload-zone__text strong { color: var(--ink-mid); }
+    .upload-zone__hint {
+        font-size: .75rem;
+        color: var(--ink-faint);
+        margin-top: 4px;
+    }
+    #preview-img {
+        display: none;
+        margin: 16px auto 0;
+        max-height: 180px;
+        border-radius: var(--radius-sm);
+        object-fit: cover;
+        border: 1px solid var(--paper-deep);
+    }
+
+    /* Action row */
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 36px;
+        padding-top: 28px;
+        border-top: 1px solid var(--paper-deep);
+    }
+
+    .btn--publish {
+        background: var(--accent);
+        color: #fff;
+        padding: 13px 32px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: var(--radius-md);
+        border: none;
+        transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .btn--publish:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(192,57,43,.25);
+    }
+    .btn--cancel {
+        font-size: .9rem;
+        color: var(--ink-light);
+        transition: color var(--transition);
+    }
+    .btn--cancel:hover { color: var(--ink); }
+
+    /* Tips box */
+    .tips-box {
+        background: var(--paper-warm);
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-md);
+        padding: 18px 22px;
+        margin-top: 24px;
+    }
+    .tips-box__title {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--ink-mid);
+        margin-bottom: 8px;
+    }
+    .tips-box ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .tips-box ul li {
+        font-size: .8rem;
+        color: var(--ink-light);
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+    }
+    .tips-box ul li::before {
+        content: '·';
+        color: var(--gold);
+        font-size: 1.2rem;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 600px) {
+        .editor-wrap { padding: 32px 18px 60px; }
+        .form-card { padding: 24px 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-wrap">
+
+    <div class="editor-header">
+        <a href="/blogs/" class="editor-header__back">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+            Back to all articles
+        </a>
+        <div class="editor-header__eyebrow">New article</div>
+        <h1 class="editor-header__title">What's on your mind?</h1>
+        <p class="editor-header__sub">Write your story and share it with the world.</p>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="field">
+                <label for="title">Article Title</label>
+                <input type="text" id="title" name="title" placeholder="Give your article a compelling title…" required>
+            </div>
+
+            <div class="field">
+                <label for="content">Your Story</label>
+                <textarea id="content" name="content" placeholder="Start writing your article here…" required></textarea>
+            </div>
+
+            <div class="field">
+                <label>Featured Image <span style="font-weight:400;text-transform:none;color:var(--ink-faint);">(optional)</span></label>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" name="image" accept="image/*" id="imageInput">
+                    <span class="upload-zone__icon">📷</span>
+                    <p class="upload-zone__text"><strong>Click to upload</strong> or drag and drop</p>
+                    <p class="upload-zone__hint">PNG, JPG, WEBP up to 10MB</p>
+                </div>
+                <img id="preview-img" src="" alt="Preview">
+            </div>
+
+            <div class="tips-box">
+                <div class="tips-box__title">✨ Writing tips</div>
+                <ul>
+                    <li>A strong headline increases readership significantly</li>
+                    <li>Start with a hook — a surprising fact or question</li>
+                    <li>Use short paragraphs for better readability</li>
+                    <li>A featured image helps your article stand out</li>
+                </ul>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn--publish">Publish article →</button>
+                <a href="/blogs/" class="btn--cancel">Discard</a>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const input = document.getElementById('imageInput');
+    const preview = document.getElementById('preview-img');
+    const zone = document.getElementById('uploadZone');
+
+    input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
+    });
 
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0 16px 0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 15px;
-            box-sizing: border-box;
+    // Drag & drop styles
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                preview.src = ev.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
-
-        textarea {
-            height: 200px;
-            resize: vertical;
-        }
-
-        button {
-            background: #2563eb;
-            color: white;
-            padding: 12px 28px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        a { color: #2563eb; }
-    </style>
-</head>
-<body>
-
-    <a href="/blogs/">← Back to all blogs</a>
-    <h1>✍️ Create New Blog</h1>
-
-    <!-- ✅ IMPORTANT: enctype added -->
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <label>Title</label>
-        <input type="text" name="title" placeholder="Enter blog title" required>
-
-        <label>Content</label>
-        <textarea name="content" placeholder="Write your blog here..." required></textarea>
-
-        <!-- ✅ NEW: Image upload -->
-        <label>Featured Image</label>
-        <input type="file" name="image" accept="image/*">
-
-        <button type="submit">Publish Blog</button>
-    </form>
-
-</body>
-</html>
+    });
+</script>
+{% endblock %}

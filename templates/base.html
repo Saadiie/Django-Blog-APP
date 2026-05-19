@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Inkwell{% endblock %}</title>
+
+    <!-- Google Fonts: Playfair Display + DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+           DESIGN TOKENS
+        ============================================================ */
+        :root {
+            --ink:       #1a1612;
+            --ink-mid:   #3d3530;
+            --ink-light: #7a6e68;
+            --ink-faint: #b5ada8;
+            --paper:     #f7f4ef;
+            --paper-warm:#ede9e2;
+            --paper-deep:#e4dfd6;
+            --accent:    #c0392b;
+            --accent-hover: #a93226;
+            --accent-soft:  #fbecea;
+            --gold:      #c9a84c;
+            --success:   #1a7a4a;
+            --success-bg:#eaf6f0;
+            --error:     #c0392b;
+            --error-bg:  #fbecea;
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --shadow-sm: 0 1px 4px rgba(26,22,18,.07);
+            --shadow-md: 0 4px 20px rgba(26,22,18,.10);
+            --shadow-lg: 0 12px 40px rgba(26,22,18,.14);
+            --transition: 220ms cubic-bezier(.4,0,.2,1);
+            --max-w: 1160px;
+            --nav-h: 68px;
+        }
+
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { font-size: 16px; scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        img { max-width: 100%; display: block; }
+        button { font-family: inherit; cursor: pointer; }
+
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', Georgia, serif;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        /* ============================================================
+           SCROLLBAR
+        ============================================================ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--paper-warm); }
+        ::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 99px; }
+
+        /* ============================================================
+           NAVBAR
+        ============================================================ */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: var(--nav-h);
+            background: rgba(247,244,239,.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--paper-deep);
+        }
+
+        .nav__inner {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            padding: 0 28px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* Logo */
+        .nav__logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav__logo span.dot { color: var(--accent); }
+
+        /* Search */
+        .nav__search {
+            flex: 1;
+            max-width: 380px;
+            position: relative;
+        }
+        .nav__search input {
+            width: 100%;
+            height: 40px;
+            background: var(--paper-warm);
+            border: 1px solid var(--paper-deep);
+            border-radius: 99px;
+            padding: 0 18px 0 40px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .9rem;
+            color: var(--ink);
+            transition: border-color var(--transition), box-shadow var(--transition);
+            outline: none;
+        }
+        .nav__search input::placeholder { color: var(--ink-faint); }
+        .nav__search input:focus {
+            border-color: var(--ink-mid);
+            box-shadow: 0 0 0 3px rgba(26,22,18,.07);
+        }
+        .nav__search svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--ink-faint);
+        }
+
+        /* Right section */
+        .nav__actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 20px;
+            font-size: .875rem;
+            font-weight: 500;
+            border-radius: 99px;
+            border: none;
+            transition: background var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+            white-space: nowrap;
+        }
+        .btn:active { transform: scale(.97); }
+
+        .btn--ghost {
+            background: transparent;
+            color: var(--ink-mid);
+            border: 1px solid var(--paper-deep);
+        }
+        .btn--ghost:hover {
+            background: var(--paper-warm);
+            border-color: var(--ink-faint);
+        }
+
+        .btn--primary {
+            background: var(--ink);
+            color: var(--paper);
+        }
+        .btn--primary:hover {
+            background: var(--ink-mid);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn--accent {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn--accent:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 16px rgba(192,57,43,.3);
+        }
+
+        .btn--sm { padding: 7px 16px; font-size: .825rem; }
+
+        /* Auth user display */
+        .nav__user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav__avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--ink);
+            color: var(--paper);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .85rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .nav__username {
+            font-size: .875rem;
+            font-weight: 500;
+            color: var(--ink-mid);
+        }
+
+        .btn--logout {
+            background: transparent;
+            border: 1px solid var(--paper-deep);
+            color: var(--ink-light);
+            padding: 7px 14px;
+            font-size: .8rem;
+            border-radius: 99px;
+        }
+        .btn--logout:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        /* Hamburger */
+        .nav__hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            padding: 4px;
+            margin-left: auto;
+        }
+        .nav__hamburger span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: var(--ink);
+            border-radius: 99px;
+            transition: transform var(--transition), opacity var(--transition);
+        }
+
+        /* Mobile drawer */
+        .nav__drawer {
+            display: none;
+            position: fixed;
+            top: var(--nav-h);
+            left: 0; right: 0;
+            background: var(--paper);
+            border-bottom: 1px solid var(--paper-deep);
+            padding: 20px 28px;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 99;
+            box-shadow: var(--shadow-md);
+        }
+        .nav__drawer.open { display: flex; }
+
+        /* ============================================================
+           FLASH MESSAGES
+        ============================================================ */
+        .messages-wrap {
+            max-width: var(--max-w);
+            margin: 20px auto 0;
+            padding: 0 28px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            font-size: .9rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+            animation: slideDown .35s ease;
+        }
+        .toast--success {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid #b3dfc8;
+        }
+        .toast--error {
+            background: var(--error-bg);
+            color: var(--error);
+            border: 1px solid #f5c6c2;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============================================================
+           MAIN CONTENT WRAPPER
+        ============================================================ */
+        .main {
+            flex: 1;
+        }
+
+        .container {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            padding: 0 28px;
+        }
+
+        /* ============================================================
+           FOOTER
+        ============================================================ */
+        .footer {
+            background: var(--ink);
+            color: var(--ink-faint);
+            padding: 48px 28px 32px;
+            margin-top: auto;
+        }
+        .footer__inner {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 28px;
+        }
+        .footer__brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--paper);
+        }
+        .footer__brand span.dot { color: var(--accent); }
+        .footer__tagline {
+            font-size: .85rem;
+            margin-top: 6px;
+            color: var(--ink-light);
+        }
+        .footer__copy {
+            font-size: .8rem;
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid #2e2a25;
+            color: var(--ink-light);
+        }
+
+        /* ============================================================
+           PAGE HEADER (shared by list, detail, forms)
+        ============================================================ */
+        .page-header {
+            padding: 56px 0 40px;
+        }
+        .page-header__eyebrow {
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+        .page-header__title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 800;
+            line-height: 1.1;
+            color: var(--ink);
+        }
+        .page-header__sub {
+            font-size: 1rem;
+            color: var(--ink-light);
+            margin-top: 12px;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 768px) {
+            .nav__search,
+            .nav__actions { display: none; }
+            .nav__hamburger { display: flex; }
+
+            .container { padding: 0 18px; }
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+    <nav class="nav">
+        <div class="nav__inner">
+            <a href="/blogs/" class="nav__logo">
+                Inkwell<span class="dot">.</span>
+            </a>
+
+            <!-- Desktop search -->
+            <form class="nav__search" method="GET" action="/blogs/">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" name="q" placeholder="Search articles…"
+                       value="{% block search_val %}{% endblock %}">
+            </form>
+
+            <!-- Desktop actions -->
+            <div class="nav__actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create-blog' %}" class="btn btn--accent btn--sm">+ Write</a>
+                    <div class="nav__user">
+                        <div class="nav__avatar">{{ user.username|slice:":1"|upper }}</div>
+                        <span class="nav__username">{{ user.username }}</span>
+                    </div>
+                    <form method="POST" action="/accounts/logout/" style="margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn--logout">Sign out</button>
+                    </form>
+                {% else %}
+                    <a href="/accounts/login/" class="btn btn--ghost btn--sm">Sign in</a>
+                    <a href="/blogs/register/" class="btn btn--primary btn--sm">Get started</a>
+                {% endif %}
+            </div>
+
+            <!-- Mobile hamburger -->
+            <button class="nav__hamburger" id="hamburger" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile drawer -->
+    <div class="nav__drawer" id="mobileDrawer">
+        <form method="GET" action="/blogs/" style="position:relative;">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                 style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-faint);">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" name="q" placeholder="Search…"
+                   style="width:100%;padding:10px 14px 10px 38px;border:1px solid var(--paper-deep);border-radius:99px;background:var(--paper-warm);font-family:inherit;font-size:.9rem;outline:none;">
+        </form>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'create-blog' %}" class="btn btn--accent">+ Write</a>
+            <form method="POST" action="/accounts/logout/">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--ghost" style="width:100%;">Sign out ({{ user.username }})</button>
+            </form>
+        {% else %}
+            <a href="/accounts/login/" class="btn btn--ghost" style="text-align:center;">Sign in</a>
+            <a href="/blogs/register/" class="btn btn--primary" style="text-align:center;">Get started</a>
+        {% endif %}
+    </div>
+
+    <!-- ============================================================
+         FLASH MESSAGES
+    ============================================================ -->
+    {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+                <div class="toast toast--{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+                    {% if 'error' in message.tags %}
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                        </svg>
+                    {% else %}
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    {% endif %}
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- ============================================================
+         MAIN
+    ============================================================ -->
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+    <footer class="footer">
+        <div class="footer__inner">
+            <div>
+                <div class="footer__brand">Inkwell<span class="dot">.</span></div>
+                <div class="footer__tagline">Ideas worth sharing.</div>
+            </div>
+            <div style="display:flex;gap:28px;font-size:.875rem;">
+                <a href="/blogs/" style="color:var(--ink-faint);transition:color var(--transition);"
+                   onmouseover="this.style.color='var(--paper)'" onmouseout="this.style.color='var(--ink-faint)'">
+                    Home
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create-blog' %}" style="color:var(--ink-faint);transition:color var(--transition);"
+                       onmouseover="this.style.color='var(--paper)'" onmouseout="this.style.color='var(--ink-faint)'">
+                        Write
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="footer__copy container">
+            &copy; {% now "Y" %} Inkwell. Built with Django.
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const hamburger = document.getElementById('hamburger');
+        const drawer = document.getElementById('mobileDrawer');
+        hamburger.addEventListener('click', () => drawer.classList.toggle('open'));
+
+        // Auto-dismiss toasts after 5 seconds
+        document.querySelectorAll('.toast').forEach(t => {
+            setTimeout(() => {
+                t.style.transition = 'opacity .4s ease, transform .4s ease';
+                t.style.opacity = '0';
+                t.style.transform = 'translateY(-8px)';
+                setTimeout(() => t.remove(), 400);
+            }, 5000);
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

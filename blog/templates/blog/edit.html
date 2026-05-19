@@ -1,11 +1,227 @@
-<h1>Edit Blog</h1>
+{% extends "base.html" %}
 
-<form method="POST">
-    {% csrf_token %}
+{% block title %}Edit — {{ blog.title }} — Inkwell{% endblock %}
 
-    <input type="text" name="title" value="{{ blog.title }}">
+{% block extra_head %}
+<style>
+    .editor-wrap {
+        max-width: 780px;
+        margin: 0 auto;
+        padding: 52px 28px 80px;
+    }
 
-    <textarea name="content">{{ blog.content }}</textarea>
+    .editor-header {
+        margin-bottom: 40px;
+    }
+    .editor-header__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .82rem;
+        font-weight: 500;
+        color: var(--ink-light);
+        margin-bottom: 24px;
+        transition: color var(--transition);
+    }
+    .editor-header__back:hover { color: var(--ink); }
+    .editor-header__eyebrow {
+        font-size: .75rem;
+        font-weight: 600;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: 10px;
+    }
+    .editor-header__title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--ink);
+    }
+    .editor-header__sub {
+        font-size: .9rem;
+        color: var(--ink-light);
+        margin-top: 8px;
+    }
 
-    <button type="submit">Update Blog</button>
-</form>
+    .form-card {
+        background: #fff;
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-lg);
+        padding: 40px 44px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .field { margin-bottom: 28px; }
+
+    label {
+        display: block;
+        font-size: .82rem;
+        font-weight: 600;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        color: var(--ink-mid);
+        margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    textarea {
+        width: 100%;
+        border: 1.5px solid var(--paper-deep);
+        background: var(--paper);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1rem;
+        color: var(--ink);
+        outline: none;
+        transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    input[type="text"]:focus,
+    textarea:focus {
+        border-color: var(--ink-mid);
+        box-shadow: 0 0 0 4px rgba(26,22,18,.06);
+        background: #fff;
+    }
+    textarea {
+        min-height: 360px;
+        resize: vertical;
+        line-height: 1.75;
+    }
+
+    /* Change indicator */
+    .changed-dot {
+        display: none;
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
+        border-radius: 50%;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+    .changed-dot.show { display: inline-block; }
+
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 36px;
+        padding-top: 28px;
+        border-top: 1px solid var(--paper-deep);
+        flex-wrap: wrap;
+    }
+
+    .btn--save {
+        background: var(--ink);
+        color: var(--paper);
+        padding: 13px 32px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: var(--radius-md);
+        border: none;
+        transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .btn--save:hover {
+        background: var(--ink-mid);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn--discard {
+        font-size: .9rem;
+        color: var(--ink-light);
+        transition: color var(--transition);
+    }
+    .btn--discard:hover { color: var(--ink); }
+
+    .edit-note {
+        background: #fffbea;
+        border: 1px solid #f0e06e;
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        font-size: .85rem;
+        color: #7a6200;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    @media (max-width: 600px) {
+        .editor-wrap { padding: 32px 18px 60px; }
+        .form-card { padding: 24px 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-wrap">
+
+    <div class="editor-header">
+        <a href="/blogs/{{ blog.id }}/" class="editor-header__back">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+            Back to article
+        </a>
+        <div class="editor-header__eyebrow">Editing article</div>
+        <h1 class="editor-header__title">
+            Revise your story
+            <span class="changed-dot" id="changeDot" title="Unsaved changes"></span>
+        </h1>
+        <p class="editor-header__sub">Make your edits below and save when you're happy.</p>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" id="editForm">
+            {% csrf_token %}
+
+            <div class="field">
+                <label for="title">Article Title</label>
+                <input type="text" id="title" name="title" value="{{ blog.title }}" required>
+            </div>
+
+            <div class="field">
+                <label for="content">Content</label>
+                <textarea id="content" name="content" required>{{ blog.content }}</textarea>
+            </div>
+
+            <div class="edit-note">
+                <span>💡</span>
+                <span>
+                    <strong>Note:</strong> This form doesn't update the featured image.
+                    If you need to replace the image, contact your admin or extend the view accordingly.
+                </span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn--save">
+                    Save changes
+                </button>
+                <a href="/blogs/{{ blog.id }}/" class="btn--discard">Discard changes</a>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Show unsaved-changes dot when the user edits
+    const dot = document.getElementById('changeDot');
+    const origTitle = document.getElementById('title').value;
+    const origContent = document.getElementById('content').value;
+
+    function checkChange() {
+        const changed =
+            document.getElementById('title').value !== origTitle ||
+            document.getElementById('content').value !== origContent;
+        dot.classList.toggle('show', changed);
+    }
+
+    document.getElementById('title').addEventListener('input', checkChange);
+    document.getElementById('content').addEventListener('input', checkChange);
+</script>
+{% endblock %}
