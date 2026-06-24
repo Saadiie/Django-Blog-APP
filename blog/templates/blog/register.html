@@ -18,10 +18,9 @@
         padding: 48px 32px;
         background: var(--paper);
     }
-
     .auth-form-inner {
         width: 100%;
-        max-width: 400px;
+        max-width: 420px;
     }
     .auth-form-inner h1 {
         font-family: 'Playfair Display', serif;
@@ -33,9 +32,10 @@
     .auth-form-inner .sub {
         font-size: .9rem;
         color: var(--ink-light);
-        margin-bottom: 36px;
+        margin-bottom: 32px;
     }
 
+    /* Fields */
     .field { margin-bottom: 20px; }
     .field label {
         display: block;
@@ -64,14 +64,38 @@
         border-color: var(--ink);
         box-shadow: 0 0 0 4px rgba(26,22,18,.07);
     }
-    .field input.valid { border-color: var(--success); }
-    .field input.invalid { border-color: var(--error); }
+    .field input.is-error  { border-color: var(--error); }
+    .field input.is-valid  { border-color: var(--success); }
 
+    .field__error {
+        font-size: .78rem;
+        color: var(--error);
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
     .field__hint {
         font-size: .75rem;
         color: var(--ink-faint);
         margin-top: 5px;
     }
+
+    /* Username preview badge */
+    .username-preview {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: var(--paper-warm);
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-sm);
+        font-size: .82rem;
+        color: var(--ink-mid);
+    }
+    .username-preview.show { display: flex; }
+    .username-preview strong { color: var(--ink); }
 
     /* Password strength */
     .strength-bar {
@@ -93,15 +117,15 @@
         color: var(--ink-faint);
     }
 
-    .form-errors {
-        background: var(--error-bg);
-        border: 1px solid #f5c6c2;
-        border-radius: var(--radius-md);
-        padding: 12px 16px;
-        margin-bottom: 20px;
+    /* Match indicator */
+    .match-msg {
+        font-size: .78rem;
+        margin-top: 5px;
     }
-    .form-errors p { font-size: .85rem; color: var(--error); }
+    .match-msg.ok  { color: var(--success); }
+    .match-msg.bad { color: var(--error); }
 
+    /* Submit button */
     .btn--register {
         width: 100%;
         height: 50px;
@@ -132,32 +156,7 @@
     .auth-footer a { color: var(--accent); font-weight: 500; }
     .auth-footer a:hover { text-decoration: underline; }
 
-    .perks {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-bottom: 28px;
-    }
-    .perk {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: .85rem;
-        color: var(--ink-light);
-    }
-    .perk-icon {
-        width: 28px;
-        height: 28px;
-        background: var(--paper-warm);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: .85rem;
-        flex-shrink: 0;
-    }
-
-    /* Right panel */
+    /* Right decorative panel */
     .auth-panel {
         background: var(--ink);
         padding: 64px 56px;
@@ -190,10 +189,7 @@
         line-height: 1.2;
         margin-bottom: 20px;
     }
-    .auth-panel__headline em {
-        font-style: italic;
-        color: var(--gold);
-    }
+    .auth-panel__headline em { font-style: italic; color: var(--gold); }
     .auth-panel__features {
         list-style: none;
         display: flex;
@@ -222,6 +218,20 @@
         flex-shrink: 0;
     }
 
+    /* Auto-username info box */
+    .info-box {
+        background: var(--paper-warm);
+        border: 1px solid var(--paper-deep);
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        font-size: .82rem;
+        color: var(--ink-light);
+        margin-bottom: 24px;
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
     @media (max-width: 768px) {
         .auth-page { grid-template-columns: 1fr; }
         .auth-panel { display: none; }
@@ -233,35 +243,81 @@
 {% block content %}
 <div class="auth-page">
 
-    <!-- FORM PANEL (LEFT) -->
+    <!-- FORM PANEL -->
     <div class="auth-form-wrap">
         <div class="auth-form-inner">
 
             <h1>Create account.</h1>
             <p class="sub">Join Inkwell and start sharing your stories.</p>
 
-            {% if error %}
-            <div class="form-errors">
-                <p>{{ error }}</p>
+            <!-- Auto-username notice -->
+            <div class="info-box">
+                <span>💡</span>
+                <span>A unique <strong>@username</strong> will be automatically generated from your Gmail address.</span>
             </div>
-            {% endif %}
 
             <form method="POST" id="registerForm" novalidate>
                 {% csrf_token %}
 
+                <!-- EMAIL -->
                 <div class="field">
-                    <label for="username">Username</label>
-                    <input type="text" name="username" id="username"
-                           placeholder="Choose a username" autocomplete="username" required>
-                    <p class="field__hint">Letters, numbers, and underscores only.</p>
+                    <label for="email">Gmail Address</label>
+                    <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        placeholder="yourname@gmail.com"
+                        value="{{ email|default:'' }}"
+                        autocomplete="email"
+                        class="{% if errors.email %}is-error{% endif %}"
+                        required>
+
+                    <!-- Username preview -->
+                    <div class="username-preview" id="usernamePreview">
+                        <span>🪪</span>
+                        Your username will be: <strong id="usernameDisplay"></strong>
+                    </div>
+
+                    {% if errors.email %}
+                        <p class="field__error">⚠ {{ errors.email }}</p>
+                    {% endif %}
                 </div>
 
+                <!-- PASSWORD -->
                 <div class="field">
                     <label for="password">Password</label>
-                    <input type="password" name="password" id="password"
-                           placeholder="Create a strong password" autocomplete="new-password" required>
-                    <div class="strength-bar"><div class="strength-bar__fill" id="strengthFill"></div></div>
+                    <input
+                        type="password"
+                        name="password"
+                        id="password"
+                        placeholder="Create a strong password"
+                        autocomplete="new-password"
+                        class="{% if errors.password %}is-error{% endif %}"
+                        required>
+                    <div class="strength-bar">
+                        <div class="strength-bar__fill" id="strengthFill"></div>
+                    </div>
                     <p class="strength-label" id="strengthLabel">Enter a password</p>
+                    {% if errors.password %}
+                        <p class="field__error">⚠ {{ errors.password }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- CONFIRM PASSWORD -->
+                <div class="field">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input
+                        type="password"
+                        name="confirm_password"
+                        id="confirm_password"
+                        placeholder="Re-enter your password"
+                        autocomplete="new-password"
+                        class="{% if errors.confirm_password %}is-error{% endif %}"
+                        required>
+                    <p class="match-msg" id="matchMsg"></p>
+                    {% if errors.confirm_password %}
+                        <p class="field__error">⚠ {{ errors.confirm_password }}</p>
+                    {% endif %}
                 </div>
 
                 <button type="submit" class="btn--register">Create my account →</button>
@@ -279,14 +335,13 @@
     <div class="auth-panel">
         <div class="auth-panel__content">
             <div class="auth-panel__logo">Inkwell<span>.</span></div>
-
             <h2 class="auth-panel__headline">
                 Your ideas deserve<br>to be <em>heard.</em>
             </h2>
-
             <ul class="auth-panel__features">
+                <li>Sign up with just your Gmail</li>
+                <li>Auto-assigned unique @username</li>
                 <li>Write and publish articles for free</li>
-                <li>Share ideas with a global community</li>
                 <li>Upload images to make posts stand out</li>
                 <li>Full control to edit and manage your work</li>
             </ul>
@@ -298,31 +353,73 @@
 
 {% block extra_scripts %}
 <script>
-    const passwordInput = document.getElementById('password');
-    const fill = document.getElementById('strengthFill');
-    const label = document.getElementById('strengthLabel');
+    // ── Username preview from email ──────────────────────────────
+    const emailInput    = document.getElementById('email');
+    const preview       = document.getElementById('usernamePreview');
+    const usernameDisp  = document.getElementById('usernameDisplay');
 
+    emailInput.addEventListener('input', () => {
+        const val = emailInput.value.trim();
+        if (val.includes('@gmail.com')) {
+            const prefix   = val.split('@')[0];
+            const username = prefix.replace(/\./g, '_');
+            usernameDisp.textContent = '@' + username;
+            preview.classList.add('show');
+        } else {
+            preview.classList.remove('show');
+        }
+    });
+
+    // ── Password strength ────────────────────────────────────────
+    const passwordInput = document.getElementById('password');
+    const fill          = document.getElementById('strengthFill');
+    const label         = document.getElementById('strengthLabel');
+
+    passwordInput.addEventListener('input', checkMatch);
     passwordInput.addEventListener('input', () => {
         const val = passwordInput.value;
         let strength = 0;
-        if (val.length >= 6) strength++;
-        if (val.length >= 10) strength++;
-        if (/[A-Z]/.test(val)) strength++;
-        if (/[0-9]/.test(val)) strength++;
+        if (val.length >= 6)          strength++;
+        if (val.length >= 10)         strength++;
+        if (/[A-Z]/.test(val))        strength++;
+        if (/[0-9]/.test(val))        strength++;
         if (/[^A-Za-z0-9]/.test(val)) strength++;
 
         const levels = [
-            { pct: '0%',   color: 'transparent', text: 'Enter a password' },
-            { pct: '25%',  color: '#e74c3c',      text: 'Weak' },
-            { pct: '50%',  color: '#f39c12',      text: 'Fair' },
-            { pct: '75%',  color: '#3498db',      text: 'Good' },
-            { pct: '100%', color: '#1a7a4a',      text: 'Strong' },
+            { pct: '0%',   color: 'transparent',   text: 'Enter a password' },
+            { pct: '25%',  color: '#e74c3c',        text: 'Weak' },
+            { pct: '50%',  color: '#f39c12',        text: 'Fair' },
+            { pct: '75%',  color: '#3498db',        text: 'Good' },
+            { pct: '100%', color: '#1a7a4a',        text: 'Strong ✓' },
         ];
         const lvl = levels[Math.min(strength, 4)];
-        fill.style.width = val ? lvl.pct : '0%';
+        fill.style.width      = val ? lvl.pct   : '0%';
         fill.style.background = lvl.color;
-        label.textContent = val ? lvl.text : 'Enter a password';
-        label.style.color = lvl.color || 'var(--ink-faint)';
+        label.textContent     = val ? lvl.text  : 'Enter a password';
+        label.style.color     = lvl.color || 'var(--ink-faint)';
     });
+
+    // ── Confirm password match ────────────────────────────────────
+    const confirmInput = document.getElementById('confirm_password');
+    const matchMsg     = document.getElementById('matchMsg');
+
+    confirmInput.addEventListener('input', checkMatch);
+
+    function checkMatch() {
+        const pw  = passwordInput.value;
+        const cpw = confirmInput.value;
+        if (!cpw) { matchMsg.textContent = ''; return; }
+        if (pw === cpw) {
+            matchMsg.textContent = '✓ Passwords match';
+            matchMsg.className   = 'match-msg ok';
+            confirmInput.classList.add('is-valid');
+            confirmInput.classList.remove('is-error');
+        } else {
+            matchMsg.textContent = '✗ Passwords do not match';
+            matchMsg.className   = 'match-msg bad';
+            confirmInput.classList.add('is-error');
+            confirmInput.classList.remove('is-valid');
+        }
+    }
 </script>
 {% endblock %}
