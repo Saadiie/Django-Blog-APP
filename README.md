@@ -1,4 +1,4 @@
-# 📝 Django Blog App
+# 📝 InkWell- A Django Blog App
 
 A simple blog application built with Python & Django that allows you to create, view, and list blog posts using SQLite as the default database.
 
